@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/bash -e
+
 rm -rf .git versions/
 git init .
 git add .
@@ -8,16 +9,23 @@ git push origin master -f
 
 export SDKMAN_DIR="$HOME/.sdkman" && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
-function diffVersion() {
-    sdk use grails $1
-    grails create-app versions
-    cd versions
+function diffProfileVersion() {
+    echo "Generating diff for profile $2"
+    grails create-app $1 --profile=$2
+    cd $1
     ./gradlew dependencyManagement > dependencyManagement.txt
     cd ..
-    git add versions
+    git add $1
+}
+
+function diffVersion() {
+    sdk use grails $1
+    echo "Generating diff for Grails $1"
+    diffProfileVersion versions web
+    diffProfileVersion rest-api-versions rest-api
     git commit -a -m $1
     git tag $1
-    rm -rf versions
+    rm -rf versions rest-api-versions
 }
 
 # Initial version to diff from
